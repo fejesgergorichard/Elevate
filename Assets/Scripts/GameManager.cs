@@ -1,5 +1,7 @@
+using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using TMPro;
@@ -7,15 +9,29 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public GameObject HolesContainer;
+    public GameObject CoinsContainer;
     public GameObject HolePrefab;
     public GameObject CoinPrefab;
     public int HolesCount = 300;
 
     [Header("Coin fly settings")]
-    public Canvas Canvas;
+    public Transform FlyingCoinParent;
     public RectTransform CoinFlyTarget;
     public TMP_Text CoinTextTop;
     public GameObject CoinSprite;
+
+    [Header("Available coins : (coins to pool)")]
+    [SerializeField] int maxCoins;
+    Queue<GameObject> coinsQueue = new Queue<GameObject>();
+
+    [Space]
+    [Header("Animation settings")]
+    [SerializeField][Range(0.5f, 0.9f)] float minAnimDuration;
+    [SerializeField][Range(0.9f, 2f)] float maxAnimDuration;
+
+    [SerializeField] Ease easeType;
+    [SerializeField] float spread;
 
     private int _score;
     public int Score
@@ -41,39 +57,65 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
         }
-        DontDestroyOnLoad(Instance);
+
+        PrepareCoins();
     }
 
     #endregion
 
-    public async void AddCoin(Vector3 coinWorldPos, int num)
-    {
-        //Vector2 coinScreenPos = Camera.main.WorldToScreenPoint(coinWorldPos);
-        var initialTargetScale = 10f;
 
+
+    private void PrepareCoins()
+    {
+        GameObject coin;
+        for (int i = 0; i < maxCoins; i++)
+        {
+            coin = Instantiate(CoinSprite);
+            coin.transform.SetParent(FlyingCoinParent.transform);
+            coin.SetActive(false);
+            coinsQueue.Enqueue(coin);
+        }
+    }
+
+    private void Animate(Vector3 collectedCoinPosition, int amount)
+    {
+        // make the target icon larger
+        var initialTargetScale = 35f;
         LeanTween.scale(CoinFlyTarget, Vector3.one * initialTargetScale * 1.2f, 0.1f).setDelay(0.2f);
 
-        //float pitch = 0.9f;
-        //for (int i = 0; i < num; i++)
-        //{
-        Score++;
+        // Animate coins towards counter
+        for (int i = 0; i < amount; i++)
+        {
+            if (coinsQueue.Count > 0)
+            {
+                //extract a coin from the pool
+                GameObject coin = coinsQueue.Dequeue();
+                coin.SetActive(true);
 
-        //    pitch += 0.1f;
-        //    //AudioManager.PlaySound("Coin", pitch);
+                //move coin to the collected coin pos
+                coin.transform.position = collectedCoinPosition + new Vector3(Random.Range(-spread, spread), 0f, 0f);
 
-        //    var coin = Instantiate(CoinSprite, coinScreenPos, Quaternion.identity);
-        //    coin.transform.SetParent(CoinFlyTarget.parent.parent);
-        //    coin.transform.localPosition = coinScreenPos;
-        //    LeanTween.moveLocal(coin, CoinFlyTarget.localPosition, 0.4f).setEaseInQuad().setIgnoreTimeScale(true);
-        //    Destroy(coin, 0.4f);
+                //animate coin to target position
+                float duration = Random.Range(minAnimDuration, maxAnimDuration);
+                coin.transform.DOLocalMove(CoinFlyTarget.localPosition, duration)
+                .SetEase(easeType)
+                .OnComplete(() => {
+                    //executes whenever coin reach target position
+                    coin.SetActive(false);
+                    coinsQueue.Enqueue(coin);
+                    
+                    Score++;
+                });
+            }
+        }
 
-
-        //    if (num > 1)
-        //        await Task.Run(() => Thread.Sleep(65));
-        //}
-
+        // reset target icon scale to normal
         LeanTween.scale(CoinFlyTarget, Vector3.one * initialTargetScale, 0.2f).setDelay(0.3f);
+    }
 
+    public void AddCoins(Vector3 collectedCoinPosition, int amount)
+    {
+        Animate(collectedCoinPosition, amount);
     }
 
     void Start()
@@ -101,10 +143,10 @@ public class GameManager : MonoBehaviour
 
             if (i != 0 && Vector3.Distance(coinSpawnPosition, holeSpawnPosition) > 1f)
             {
-                Instantiate(CoinPrefab, coinSpawnPosition, Quaternion.identity);
+                Instantiate(CoinPrefab, coinSpawnPosition, Quaternion.identity, CoinsContainer.transform);
             }
 
-            Instantiate(HolePrefab, holeSpawnPosition, Quaternion.identity);
+            Instantiate(HolePrefab, holeSpawnPosition, Quaternion.identity, HolesContainer.transform);
         }
     }
     

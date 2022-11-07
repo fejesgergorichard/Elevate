@@ -7,7 +7,7 @@ public class PlayerControls : MonoBehaviour
     public CharacterController2D Left;
     public CharacterController2D Right;
 	[Space]
-	public float Speed = 2f;
+	public float Speed = 0.25f;
 
 	private bool tapLeft;
 	private bool tapRight;
@@ -20,7 +20,8 @@ public class PlayerControls : MonoBehaviour
 		deviceType = SystemInfo.deviceType;
     }
 
-    void Update()
+
+	void Update()
     {
 		if (deviceType == DeviceType.Handheld)
 		{
@@ -48,11 +49,11 @@ public class PlayerControls : MonoBehaviour
 		// Process the inputs
 		if (tapLeft)
 		{
-			Left.Move(Speed * Time.deltaTime, false, false);
+			Left.Move(Speed, false, false);
 		}
 		if (tapRight)
 		{
-			Right.Move(Speed * Time.deltaTime, false, false);
+			Right.Move(Speed, false, false);
 		}
 	}
 

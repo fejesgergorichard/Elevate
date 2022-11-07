@@ -72,6 +72,8 @@ public class HoleBehavior : MonoBehaviour
 
     private IEnumerator MoveInside(Vector3 targetValue, float duration, Collider2D other, CancellationToken token)
     {
+        other.transform.GetComponentInParent<CircleCollider2D>().enabled = false;
+
         Vector3 startValue = other.transform.position;
         var x = startValue.x;
         var y = startValue.y;
