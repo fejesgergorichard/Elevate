@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class PlayerControls : MonoBehaviour
 {
-    public CharacterController2D Left;
-    public CharacterController2D Right;
+    public CharacterController2D Controller;
 	[Space]
-	public float Speed = 0.25f;
+	public float YSpeed = 0.5f;
+	public float XSpeed = 0.25f;
 
 	private bool tapLeft;
 	private bool tapRight;
@@ -49,11 +49,11 @@ public class PlayerControls : MonoBehaviour
 		// Process the inputs
 		if (tapLeft)
 		{
-			Left.Move(Speed, false, false);
+			Controller.Move(-XSpeed, YSpeed, false, false);
 		}
 		if (tapRight)
 		{
-			Right.Move(Speed, false, false);
+			Controller.Move(XSpeed, YSpeed, false, false);
 		}
 	}
 
